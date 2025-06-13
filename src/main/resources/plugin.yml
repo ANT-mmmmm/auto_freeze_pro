@@ -1,0 +1,11 @@
+name: auto_freeze_pro
+version: '1.0-SNAPSHOT'
+main: sub.server.tool.ant_cave.asia.auto_freeze_pro.Auto_freeze_pro
+api-version: '1.21'
+authors: [ ANTmmmmm ]
+
+# 注册指令
+commands:
+  hibernate:
+    description: 手动触发服务器休眠
+    usage: /hibernate

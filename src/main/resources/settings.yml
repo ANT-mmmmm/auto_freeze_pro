@@ -1,0 +1,13 @@
+#  语言
+lang: zh_cn
+
+#  总开关
+autoFreeze: false
+autoHibernate: false
+
+#  延时
+autoFreezeDelayTick: 40
+autoHibernateDelaySecond: 600
+
+#  休眠前提前警告的时间
+autoHibernateWarningSecond: 10
