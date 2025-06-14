@@ -75,7 +75,14 @@ public final class Auto_freeze_pro extends JavaPlugin {
         autoFreezeDelayTick=settingsConfig.getInt("autoFreezeDelayTick",  40);
         autoHibernateDelaySecond = settingsConfig.getInt("autoHibernateDelaySecond",  600);
         autoHibernateWarningSecond=settingsConfig.getInt("autoHibernateWarningSecond",  10);
-
+// 输出当前配置信息到日志
+getLogger().info("§a[配置加载] 当前设置:");
+getLogger().info("§blang: §r" + lang);
+getLogger().info("§bautoFreeze: §r" + autoFreeze);
+getLogger().info("§bautoHibernate: §r" + autoHibernate);
+getLogger().info("§bautoFreezeDelayTick: §r" + autoFreezeDelayTick);
+getLogger().info("§bautoHibernateDelaySecond: §r" + autoHibernateDelaySecond);
+getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSecond);
 
         // 注册玩家事件监听器
         getServer().getPluginManager().registerEvents(new PlayerEventsListener(this), this);
@@ -86,7 +93,9 @@ public final class Auto_freeze_pro extends JavaPlugin {
         // 如果初始状态下没有玩家在线
         if (Bukkit.getOnlinePlayers().isEmpty()) {
             // 初始冻结游戏
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
+            if (autoFreeze){
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
+            }
             // 启动定时休眠任务
             if (autoHibernate) {
                 this.hibernateTask = new BukkitRunnable() {
@@ -139,6 +148,54 @@ public final class Auto_freeze_pro extends JavaPlugin {
 
             return true;
         }
+        if (command.getName().equalsIgnoreCase("afreloadconfig")) {
+            File settingsFile = new File(getDataFolder(), "settings.yml");
+            if (!settingsFile.exists()) {
+                settingsFile.getParentFile().mkdirs();
+                saveResource("settings.yml", false);
+            }
+
+            FileConfiguration settingsConfig = YamlConfiguration.loadConfiguration(settingsFile);
+
+            // 保存旧的配置值用于比较
+            String oldLang = lang;
+            boolean oldAutoFreeze = autoFreeze;
+            boolean oldAutoHibernate = autoHibernate;
+            int oldAutoFreezeDelayTick = autoFreezeDelayTick;
+            int oldAutoHibernateDelaySecond = autoHibernateDelaySecond;
+            int oldAutoHibernateWarningSecond = autoHibernateWarningSecond;
+
+            // 加载新的配置值
+            lang = settingsConfig.getString("lang", "zh_cn");
+            autoFreeze = settingsConfig.getBoolean("autoFreeze", true);
+            autoHibernate = settingsConfig.getBoolean("autoHibernate", true);
+            autoFreezeDelayTick = settingsConfig.getInt("autoFreezeDelayTick", 40);
+            autoHibernateDelaySecond = settingsConfig.getInt("autoHibernateDelaySecond", 600);
+            autoHibernateWarningSecond = settingsConfig.getInt("autoHibernateWarningSecond", 10);
+
+            // 比较并输出变更项（带颜色）
+            if (!oldLang.equals(lang)) {
+                getLogger().info("§a[配置重载] lang 已更改: §r" + oldLang + " → §a" + lang);
+            }
+            if (oldAutoFreeze != autoFreeze) {
+                getLogger().info("§a[配置重载] autoFreeze 已更改: §r" + oldAutoFreeze + " → §a" + autoFreeze);
+            }
+            if (oldAutoHibernate != autoHibernate) {
+                getLogger().info("§a[配置重载] autoHibernate 已更改: §r" + oldAutoHibernate + " → §a" + autoHibernate);
+            }
+            if (oldAutoFreezeDelayTick != autoFreezeDelayTick) {
+                getLogger().info("§a[配置重载] autoFreezeDelayTick 已更改: §r" + oldAutoFreezeDelayTick + " → §a" + autoFreezeDelayTick);
+            }
+            if (oldAutoHibernateDelaySecond != autoHibernateDelaySecond) {
+                getLogger().info("§a[配置重载] autoHibernateDelaySecond 已更改: §r" + oldAutoHibernateDelaySecond + " → §a" + autoHibernateDelaySecond);
+            }
+            if (oldAutoHibernateWarningSecond != autoHibernateWarningSecond) {
+                getLogger().info("§a[配置重载] autoHibernateWarningSecond 已更改: §r" + oldAutoHibernateWarningSecond + " → §a" + autoHibernateWarningSecond);
+            }
+            startHibernateTask(sender);
+
+            return true;
+        }
 
         return false;
     }
@@ -168,7 +225,9 @@ public final class Auto_freeze_pro extends JavaPlugin {
                     sender.sendMessage("§a服务器系统休眠!");
 
                     // 踢出所有玩家
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kick @a 服务器休眠");
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        player.kickPlayer("服务器休眠");
+                    }
 
                     // 使用 ProcessBuilder 替代 Runtime.exec()
                     String osName = System.getProperty("os.name").toLowerCase();
@@ -227,8 +286,10 @@ public final class Auto_freeze_pro extends JavaPlugin {
             // 当第一个玩家加入时
             if (Bukkit.getOnlinePlayers().size() == 1) {
                 plugin.getLogger().info("第一个玩家 " + event.getPlayer().getName() + " 加入了游戏");
-                plugin.getLogger().info("游戏解冻");
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick unfreeze");
+                if (plugin.autoFreeze){
+                    plugin.getLogger().info("游戏解冻");
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick unfreeze");
+                }
 
                 // 如果有正在运行的休眠任务
                 if (plugin.hibernateTask != null){
@@ -256,9 +317,17 @@ public final class Auto_freeze_pro extends JavaPlugin {
             // 当最后一个玩家退出时
             if (Bukkit.getOnlinePlayers().size() == 1) {
                 plugin.getLogger().info("最后一个玩家 " + event.getPlayer().getName() + " 退出了游戏");
-                sleep(1000);
+
                 // 冻结服务器
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
+                if (plugin.autoFreeze){
+                    // 创建一个新的延迟任务来处理冻结操作，避免阻塞主线程
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
+                        }
+                    }.runTaskLater(plugin, plugin.autoFreezeDelayTick);
+                }
 
                 // 如果启用了自动休眠功能
                 if (plugin.autoHibernate)

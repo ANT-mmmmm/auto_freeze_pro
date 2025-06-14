@@ -9,3 +9,7 @@ commands:
   hibernate:
     description: 手动触发服务器休眠
     usage: /hibernate
+
+  afreloadconfig:
+    description: 重载插件
+    usage: /afreloadconfig
