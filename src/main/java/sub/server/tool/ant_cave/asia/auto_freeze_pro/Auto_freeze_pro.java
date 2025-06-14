@@ -1,6 +1,7 @@
 package sub.server.tool.ant_cave.asia.auto_freeze_pro;
 
 // Bukkit核心类导入
+
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -23,6 +24,7 @@ import java.io.File;
 import java.util.Objects;
 
 // 注解相关导入
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
 // 线程相关导入
@@ -37,21 +39,33 @@ public final class Auto_freeze_pro extends JavaPlugin {
     // 玩家计数器
     public int currentPlayerNumber = 0;
 
+    public boolean currentFreezeStatus = false;
+
+
     // 配置
     public String lang = "zh_cn"; // 默认语言设置为中文
 
     public boolean autoFreeze = false;//  是否自动冻结游戏
     public boolean autoHibernate = false;//  是否自动休眠游戏
 
-    public int autoFreezeDelayTick=40;//  默认延迟40tick
+    public int autoFreezeDelayTick = 40;//  默认延迟40tick
     public int autoHibernateDelaySecond = 600;//  默认延迟600秒
 
-    public int autoHibernateWarningSecond=10;//  默认延迟10秒
+    public int autoHibernateWarningSecond = 10;//  默认延迟10秒
 
 
     // 使用 BukkitRunnable 替代 taskId 来管理休眠任务
     private BukkitRunnable hibernateTask = null;
 
+
+    private void freeze() {
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
+        currentFreezeStatus = true;
+    }
+    private void unfreeze() {
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick unfreeze");
+        currentFreezeStatus = false;
+    }
 
     /**
      * 插件启用时调用的方法
@@ -69,20 +83,20 @@ public final class Auto_freeze_pro extends JavaPlugin {
         FileConfiguration settingsConfig = YamlConfiguration.loadConfiguration(settingsFile);
 
         // 加载配置项
-        lang=settingsConfig.getString("lang","zh_cn");
-        autoFreeze = settingsConfig.getBoolean("autoFreeze",  true);
-        autoHibernate = settingsConfig.getBoolean("autoHibernate",  true);
-        autoFreezeDelayTick=settingsConfig.getInt("autoFreezeDelayTick",  40);
-        autoHibernateDelaySecond = settingsConfig.getInt("autoHibernateDelaySecond",  600);
-        autoHibernateWarningSecond=settingsConfig.getInt("autoHibernateWarningSecond",  10);
+        lang = settingsConfig.getString("lang", "zh_cn");
+        autoFreeze = settingsConfig.getBoolean("autoFreeze", true);
+        autoHibernate = settingsConfig.getBoolean("autoHibernate", true);
+        autoFreezeDelayTick = settingsConfig.getInt("autoFreezeDelayTick", 40);
+        autoHibernateDelaySecond = settingsConfig.getInt("autoHibernateDelaySecond", 600);
+        autoHibernateWarningSecond = settingsConfig.getInt("autoHibernateWarningSecond", 10);
 // 输出当前配置信息到日志
-getLogger().info("§a[配置加载] 当前设置:");
-getLogger().info("§blang: §r" + lang);
-getLogger().info("§bautoFreeze: §r" + autoFreeze);
-getLogger().info("§bautoHibernate: §r" + autoHibernate);
-getLogger().info("§bautoFreezeDelayTick: §r" + autoFreezeDelayTick);
-getLogger().info("§bautoHibernateDelaySecond: §r" + autoHibernateDelaySecond);
-getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSecond);
+        getLogger().info("§a[配置加载] 当前设置:");
+        getLogger().info("§blang: §r" + lang);
+        getLogger().info("§bautoFreeze: §r" + autoFreeze);
+        getLogger().info("§bautoHibernate: §r" + autoHibernate);
+        getLogger().info("§bautoFreezeDelayTick: §r" + autoFreezeDelayTick);
+        getLogger().info("§bautoHibernateDelaySecond: §r" + autoHibernateDelaySecond);
+        getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSecond);
 
         // 注册玩家事件监听器
         getServer().getPluginManager().registerEvents(new PlayerEventsListener(this), this);
@@ -93,8 +107,8 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
         // 如果初始状态下没有玩家在线
         if (Bukkit.getOnlinePlayers().isEmpty()) {
             // 初始冻结游戏
-            if (autoFreeze){
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
+            if (autoFreeze) {
+                freeze();
             }
             // 启动定时休眠任务
             if (autoHibernate) {
@@ -125,10 +139,11 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
 
     /**
      * 处理插件命令
-     * @param sender 命令发送者
+     *
+     * @param sender  命令发送者
      * @param command 执行的命令
-     * @param label 命令标签
-     * @param args 命令参数
+     * @param label   命令标签
+     * @param args    命令参数
      * @return 是否成功处理命令
      */
     @Override
@@ -202,6 +217,7 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
 
     /**
      * 启动10秒倒计时并执行系统休眠
+     *
      * @param sender 命令发送者
      */
     private void startHibernateTask(CommandSender sender) {
@@ -270,6 +286,7 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
     class PlayerEventsListener implements Listener {
 
         private final Auto_freeze_pro plugin;
+
         public PlayerEventsListener(Auto_freeze_pro plugin) {
             this.plugin = plugin;
             // 注册事件监听器
@@ -278,6 +295,7 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
 
         /**
          * 玩家加入事件处理
+         *
          * @param event 玩家加入事件
          * @throws InterruptedException 如果线程被中断
          */
@@ -286,13 +304,15 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
             // 当第一个玩家加入时
             if (Bukkit.getOnlinePlayers().size() == 1) {
                 plugin.getLogger().info("第一个玩家 " + event.getPlayer().getName() + " 加入了游戏");
-                if (plugin.autoFreeze){
-                    plugin.getLogger().info("游戏解冻");
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick unfreeze");
+                if (plugin.autoFreeze && plugin.currentFreezeStatus) {
+                    if (plugin.currentFreezeStatus){
+                        Bukkit.getLogger().info("游戏解冻");
+                    }
+                    unfreeze();
                 }
 
                 // 如果有正在运行的休眠任务
-                if (plugin.hibernateTask != null){
+                if (plugin.hibernateTask != null) {
                     try {
                         // 取消休眠任务
                         if (plugin.autoHibernate) {
@@ -309,6 +329,7 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
 
         /**
          * 玩家退出事件处理
+         *
          * @param event 玩家退出事件
          * @throws InterruptedException 如果线程被中断
          */
@@ -319,19 +340,12 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
                 plugin.getLogger().info("最后一个玩家 " + event.getPlayer().getName() + " 退出了游戏");
 
                 // 冻结服务器
-                if (plugin.autoFreeze){
-                    // 创建一个新的延迟任务来处理冻结操作，避免阻塞主线程
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
-                        }
-                    }.runTaskLater(plugin, plugin.autoFreezeDelayTick);
+                if (plugin.autoFreeze) {
+                    freeze();
                 }
 
                 // 如果启用了自动休眠功能
-                if (plugin.autoHibernate)
-                {
+                if (plugin.autoHibernate) {
                     // 如果有旧的任务，先取消
                     if (plugin.hibernateTask != null) {
                         plugin.hibernateTask.cancel(); // 先取消旧任务
@@ -341,6 +355,9 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
                     plugin.hibernateTask = new BukkitRunnable() {
                         @Override
                         public void run() {
+                            if (!currentFreezeStatus) {
+                                freeze();
+                            }
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "hibernate");
                         }
                     };
@@ -352,4 +369,5 @@ getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSeco
             }
         }
     }
+
 }
