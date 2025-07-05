@@ -9,7 +9,19 @@ commands:
   hibernate:
     description: 手动触发服务器休眠
     usage: /hibernate
+    permission: auto_freeze_pro.hibernate.use  # 添加权限节点
 
   afreloadconfig:
     description: 重载插件
     usage: /afreloadconfig
+    permission: auto_freeze_pro.reloadconfig.use  # 添加权限节点
+
+# 权限节点定义
+permissions:
+  auto_freeze_pro.hibernate.use:
+    description: 允许使用 /hibernate 指令
+    default: op  # 默认只有 OP 可以使用
+
+  auto_freeze_pro.reloadconfig.use:
+    description: 允许使用 /afreloadconfig 指令
+    default: op  # 默认只有 OP 可以使用
