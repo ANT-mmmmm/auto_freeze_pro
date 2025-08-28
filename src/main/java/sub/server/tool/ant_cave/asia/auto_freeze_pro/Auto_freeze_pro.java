@@ -142,7 +142,7 @@ public final class Auto_freeze_pro extends JavaPlugin {
                     public void run() {
                         if (currentPlayerNumber == 0) {
                             getLogger().info("已等待 " + autoHibernateDelaySecond + " 秒，无玩家在线，已触发服务器休眠！");
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "hibernate");
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "stop");
                         }
                     }
                 };
@@ -405,7 +405,7 @@ public final class Auto_freeze_pro extends JavaPlugin {
                             if (!currentFreezeStatus) {
                                 freeze();
                             }
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "hibernate");
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "stop");
                         }
                     };
 
