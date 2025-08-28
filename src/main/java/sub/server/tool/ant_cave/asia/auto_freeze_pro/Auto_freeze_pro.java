@@ -21,8 +21,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 // 其他必要的Java类导入
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 // 注解相关导入
@@ -58,13 +56,6 @@ public final class Auto_freeze_pro extends JavaPlugin {
 
     // 使用 BukkitRunnable 替代 taskId 来管理休眠任务
     private BukkitRunnable hibernateTask = null;
-
-    // 依赖插件情况，键为主类名称，值为Boolean表示是否启用
-    private final Map<String, Boolean> dependPlugin = new HashMap<>() {
-        {
-            put("ru.dvdishka.backuper.Backuper", false);
-        }
-    };
 
 
     private void freeze() {
@@ -107,22 +98,6 @@ public final class Auto_freeze_pro extends JavaPlugin {
         getLogger().info("§bautoHibernateDelaySecond: §r" + autoHibernateDelaySecond);
         getLogger().info("§bautoHibernateWarningSecond: §r" + autoHibernateWarningSecond);
 
-        // 检测依赖插件
-        for (Map.Entry<String, Boolean> entry : dependPlugin.entrySet()) {
-            String pluginClassName = entry.getKey();
-            try {
-                Class<?> pluginClass = Class.forName(pluginClassName);
-                // 如果类存在，说明插件已加载
-                dependPlugin.put(pluginClassName, true);
-                getLogger().info("§a[依赖检测] 已找到插件: §r" + pluginClassName);
-            } catch (ClassNotFoundException e) {
-                // 如果类不存在，说明插件未加载
-                dependPlugin.put(pluginClassName, false);
-                getLogger().info("§c[依赖检测] 未找到插件: §r" + pluginClassName);
-            }
-        }
-
-
         // 注册玩家事件监听器
         getServer().getPluginManager().registerEvents(new PlayerEventsListener(this), this);
 
@@ -160,27 +135,7 @@ public final class Auto_freeze_pro extends JavaPlugin {
     @Override
     public void onDisable() {
         getLogger().info("AutoFreeze has been disabled!");
-
-        // 取消所有正在运行的任务
-        if (this.hibernateTask != null) {
-            this.hibernateTask.cancel();
-            this.hibernateTask = null;
-        }
-
-        // 确保服务器在插件禁用时解冻
-        if (currentFreezeStatus) {
-            unfreeze();
-        }
-
-        // 强制中断所有与本插件相关的任务（通过 Bukkit 调度器取消）
-        Bukkit.getScheduler().cancelTasks(this);
-
-        // 重置玩家计数器和冻结状态
-        currentPlayerNumber = 0;
-        currentFreezeStatus = false;
     }
-
-
 
     /**
      * 处理插件命令
@@ -272,8 +227,6 @@ public final class Auto_freeze_pro extends JavaPlugin {
         if (this.hibernateTask != null) {
             this.hibernateTask.cancel();
         }
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"save-all");
-        Bukkit.getLogger().info("已保存");
 
         // 创建新的倒计时任务
         this.hibernateTask = new BukkitRunnable() {
@@ -295,7 +248,6 @@ public final class Auto_freeze_pro extends JavaPlugin {
                     // 使用 ProcessBuilder 替代 Runtime.exec()
                     String osName = System.getProperty("os.name").toLowerCase();
                     try {
-
                         ProcessBuilder processBuilder;
                         if (osName.contains("win")) {
                             // Windows 系统
@@ -416,6 +368,5 @@ public final class Auto_freeze_pro extends JavaPlugin {
             }
         }
     }
-
 
 }
